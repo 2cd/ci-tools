@@ -90,11 +90,11 @@ jobs:
       - name: pack windows
         env:
           file: ${{ format('{0}.exe', env.BIN) }}
-          file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
+          # file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
           archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }} 
         if: contains(matrix.target, 'windows')
         run: |
-          7z a -ttar -so a.tar ${{env.file}} | 7z a -si -mmt -mx9 -txz ${{env.file_name}}
+          7z a -ttar -so a.tar ${{env.file}} | 7z a -si -mmt -mx9 -txz ${{env.archive}}
           echo archive="${{env.archive}}" >> $env:GITHUB_ENV
 
       - name: Create a release
