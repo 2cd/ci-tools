@@ -95,7 +95,7 @@ jobs:
         if: contains(matrix.target, 'windows')
         run: |
           7z a -ttar -so a.tar ${{env.file}} | 7z a -si -mmt -mx9 -txz ${{env.file_name}}
-          archive="${{env.archive}}" >> $env:GITHUB_ENV
+          echo archive="${{env.archive}}" >> $env:GITHUB_ENV
 
       - name: Create a release
         id: create_release
@@ -105,4 +105,5 @@ jobs:
             ${{ env.archive }}
           tag_name: ${{ env.TAG }}
           fail_on_unmatched_files: true
+          token: ${{ secrets.GH }}
 
