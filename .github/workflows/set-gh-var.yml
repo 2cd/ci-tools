@@ -105,5 +105,5 @@ jobs:
             ${{ env.archive }}
           tag_name: ${{ env.TAG }}
           fail_on_unmatched_files: true
-          token: ${{ secrets.GH }}
+          # token: ${{ secrets.GH }}
 
