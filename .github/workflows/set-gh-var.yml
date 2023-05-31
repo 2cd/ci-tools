@@ -81,7 +81,7 @@ jobs:
 
       - name: pack to tar.zst(Unix)
         env:
-          archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }}
+          archive: ${{ format('{0}_{1}.tar.zst', runner.os, runner.arch) }}
         if: runner.os != 'Windows'
         run: |
           tar -C ${{env.BUILD_DIR}} -c ${{env.PKG_NAME}} | zstd --ultra -22 -vfo ${{env.archive}}
