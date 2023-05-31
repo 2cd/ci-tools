@@ -1,0 +1,111 @@
+name: Build `set-gh-var`
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/set-gh-var.yml"
+
+jobs:
+  get_repo_info:
+    runs-on: ubuntu-latest
+    env:
+      FILE: set-gh-var/Cargo.toml
+    outputs:
+      name: ${{ steps.get_bin_name.outputs.name }}
+      ver: ${{ steps.get_ver.outputs.ver }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: get tomlyre
+        run: docker run -i --rm -v $PWD:/local -w /data ghcr.io/2moe/tomlyre:x86_64-unknown-linux-musl cp tomlyre /local
+
+      - name: get version
+        id: get_ver
+        run: echo "ver=$(./tomlyre get ${{env.FILE}} -k package.version)" >> $GITHUB_OUTPUT
+
+      - name: get name
+        id: get_bin_name
+        run: echo "name=$(./tomlyre get ${{env.FILE}} -k bin.0.name)" >> $GITHUB_OUTPUT
+  cross:
+    needs: get_repo_info
+    strategy:
+      # max-parallel: 2
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    runs-on: ${{matrix.os}}
+    env:
+      PKG_NAME: ${{ needs.get_repo_info.outputs.name }}
+      VER: ${{ needs.get_repo_info.outputs.ver }}
+      TAG: ${{ format('{0}_v{1}', needs.get_repo_info.outputs.name, needs.get_repo_info.outputs.ver) }}
+      PROF: release
+      BUILD_DIR: target/${{matrix.target}}/release
+      BIN: target/${{matrix.target}}/release/${{ needs.get_repo_info.outputs.name }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: cache rust deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo
+            target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{matrix.target}}
+
+      - name: static build
+        # if: contains(matrix.target, 'linux')
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static -C lto=false"
+        run: cargo b -r -v --target ${{matrix.target}}
+
+      - name: pack to tar.xz(Unix)
+        env:
+          archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }}
+          # archive: ${{ format('{0}.tar.xz', matrix.target) }}
+        if: runner.os != 'Windows'
+        run: |
+          tar -C ${{env.BUILD_DIR}} -c ${{env.PKG_NAME}} | xz -z -T0 -9 -e -v -c - >${{env.archive}}
+          echo "archive=${{env.archive}}" >> $GITHUB_ENV
+      
+      - name: pack windows
+        env:
+          file: ${{ format('{0}.exe', env.BIN) }}
+          file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
+          # "Windows_X64.exe.zip"
+          archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }} 
+        if: contains(matrix.target, 'windows')
+        run: |
+          7z a -ttar -so a.tar ".\target\b.exe" | 7z a -si -mmt -mx9 -txz ${{env.file_name}}
+          archive="${{env.archive}}" >> $env:GITHUB_ENV
+
+      - name: Create a release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ env.archive }}
+          tag_name: ${{ env.TAG }}
+          fail_on_unmatched_files: true
+

@@ -1,0 +1,22 @@
+# all
+/*
+
+# white list
+!/.git*
+!/Cargo.toml
+!/Readme*
+!/License
+!/assets
+!/hlight*
+!/Cargo.lock
+# !/src
+!/set-gh-var
+
+# black list
+target
+#core/src/main.rs
+test.*
+tests.*
+tmp
+*.tmp
+hlight/src/main.rs
