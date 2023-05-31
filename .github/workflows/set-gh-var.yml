@@ -79,23 +79,24 @@ jobs:
           RUSTFLAGS: "-C target-feature=+crt-static -C lto=false"
         run: cargo b -r -v --target ${{matrix.target}}
 
-      - name: pack to tar.xz(Unix)
+      - name: pack to tar.zst(Unix)
         env:
           archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }}
         if: runner.os != 'Windows'
         run: |
-          tar -C ${{env.BUILD_DIR}} -c ${{env.PKG_NAME}} | xz -z -T0 -9 -e -v -c - >${{env.archive}}
+          tar -C ${{env.BUILD_DIR}} -c ${{env.PKG_NAME}} | zstd --ultra -22 -vfo ${{env.archive}}
           echo "archive=${{env.archive}}" >> $GITHUB_ENV
       
       - name: pack windows
         env:
           file: ${{ format('{0}.exe', env.BIN) }}
-          # file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
-          archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }} 
-        if: contains(matrix.target, 'windows')
+          file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
+          tar_archive: ${{ format('{0}_{1}.tar', runner.os, runner.arch) }} 
+        if: runner.os == 'Windows'
         run: |
-          7z a -ttar -so a.tar ${{env.file}} | 7z a -si -mmt -mx9 -txz ${{env.archive}}
-          echo archive="${{env.archive}}" >> $env:GITHUB_ENV
+          tar -C ${{env.BUILD_DIR}} -cvf ${{env.tar_archive}} ${{env.file_name}}
+          zstd -19 -v -f ${{env.tar_archive}}
+          echo archive="${{env.tar_archive}}.zst" >> $env:GITHUB_ENV
 
       - name: Create a release
         id: create_release
