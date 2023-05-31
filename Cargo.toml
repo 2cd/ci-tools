@@ -2,5 +2,11 @@
 members = ["set-gh-var"]
 
 [profile.release]
+panic = "unwind"
 strip = true
+
+[profile.fat]
+inherits = "release"
+lto = "fat"
+panic = "abort"
 opt-level = "z"

@@ -48,9 +48,9 @@ jobs:
       PKG_NAME: ${{ needs.get_repo_info.outputs.name }}
       VER: ${{ needs.get_repo_info.outputs.ver }}
       TAG: ${{ format('{0}_v{1}', needs.get_repo_info.outputs.name, needs.get_repo_info.outputs.ver) }}
-      PROF: release
-      BUILD_DIR: target/${{matrix.target}}/release
-      BIN: target/${{matrix.target}}/release/${{ needs.get_repo_info.outputs.name }}
+      PROF: fat
+      BUILD_DIR: target/${{matrix.target}}/fat
+      BIN: target/${{matrix.target}}/fat/${{ needs.get_repo_info.outputs.name }}
 
     steps:
       - uses: actions/checkout@v3
@@ -75,15 +75,13 @@ jobs:
 
       - name: build rs(Unix)
         if: runner.os != 'Windows'
-        env:
-          RUSTFLAGS: "-C lto=fat"
-        run: cargo b -r -v --target ${{matrix.target}}
+        run: cargo b --profile ${{env.PROF}} -v --target ${{matrix.target}}
 
       - name: build rs(Windows)
         if: runner.os == 'Windows'
         env:
           RUSTFLAGS: "-C lto=false"
-        run: cargo b -r -v --target ${{matrix.target}}
+        run: cargo b --profile ${{env.PROF}} -v --target ${{matrix.target}}
 
       - name: pack to tar.zst(Unix)
         env:
