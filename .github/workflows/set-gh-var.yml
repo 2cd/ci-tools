@@ -33,7 +33,6 @@ jobs:
   cross:
     needs: get_repo_info
     strategy:
-      # max-parallel: 2
       fail-fast: false
       matrix:
         include:
@@ -83,7 +82,6 @@ jobs:
       - name: pack to tar.xz(Unix)
         env:
           archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }}
-          # archive: ${{ format('{0}.tar.xz', matrix.target) }}
         if: runner.os != 'Windows'
         run: |
           tar -C ${{env.BUILD_DIR}} -c ${{env.PKG_NAME}} | xz -z -T0 -9 -e -v -c - >${{env.archive}}
@@ -93,7 +91,6 @@ jobs:
         env:
           file: ${{ format('{0}.exe', env.BIN) }}
           file_name: ${{ format('{0}.exe', env.PKG_NAME) }}
-          # "Windows_X64.exe.zip"
           archive: ${{ format('{0}_{1}.tar.xz', runner.os, runner.arch) }} 
         if: contains(matrix.target, 'windows')
         run: |
