@@ -80,7 +80,7 @@ jobs:
       - name: build rs(Windows)
         if: runner.os == 'Windows'
         env:
-          RUSTFLAGS: "-C lto=false"
+          RUSTFLAGS: "-C panic=unwind"
         run: cargo b --profile ${{env.PROF}} -v --target ${{matrix.target}}
 
       - name: pack to tar.zst(Unix)
