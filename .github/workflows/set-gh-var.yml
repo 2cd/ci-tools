@@ -73,10 +73,16 @@ jobs:
           override: true
           target: ${{matrix.target}}
 
-      - name: static build
-        # if: contains(matrix.target, 'linux')
+      - name: build rs(Unix)
+        if: runner.os != 'Windows'
         env:
-          RUSTFLAGS: "-C target-feature=+crt-static -C lto=false"
+          RUSTFLAGS: "-C lto=fat"
+        run: cargo b -r -v --target ${{matrix.target}}
+
+      - name: build rs(Windows)
+        if: runner.os == 'Windows'
+        env:
+          RUSTFLAGS: "-C lto=false"
         run: cargo b -r -v --target ${{matrix.target}}
 
       - name: pack to tar.zst(Unix)

@@ -3,3 +3,4 @@ members = ["set-gh-var"]
 
 [profile.release]
 strip = true
+opt-level = "z"
